@@ -1,4 +1,4 @@
-# 🕌 MMCV - Muslim Marriage CV Studio
+# 🕌 Marriage CV Generator - MMCV Studio
 
 **MMCV Studio** is a premium, privacy-first web application designed for creating respectful and professional Muslim Marriage CVs (Biodatas). 
 
