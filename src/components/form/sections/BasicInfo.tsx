@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Calendar, MapPin, Phone, Mail, Droplets, Ruler, Heart } from 'lucide-react';
 import { Card } from '../../ui/Card';
-import { Input, Select } from '../../ui/Input';
+import { Input, Select, Textarea } from '../../ui/Input';
 import { HEIGHT_OPTIONS, BLOOD_GROUPS, MARITAL_STATUS, GENDER_OPTIONS } from '../../../constants';
 import { useFormContext } from 'react-hook-form';
 

@@ -6,7 +6,7 @@ import { INITIAL_BIODATA } from './types';
 import { BiodataForm } from './components/form/BiodataForm';
 import { LivePreview } from './components/preview/LivePreview';
 import { ProgressBar } from './components/ProgressBar';
-import { Button } from './components/ui/Button';
+import { Button, cn } from './components/ui/Button';
 import { FileDown, Printer, ShieldCheck, Heart, Moon, Sun, Menu, X, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2pdf from 'html2pdf.js';
@@ -18,7 +18,7 @@ export default function App() {
 
   const methods = useForm<BiodataFormValues>({
     resolver: zodResolver(biodataSchema),
-    defaultValues: INITIAL_BIODATA,
+    defaultValues: INITIAL_BIODATA as any,
     mode: 'onChange',
   });
 
