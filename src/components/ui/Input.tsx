@@ -31,7 +31,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={cn(
-              'w-full px-4 py-3 bg-white border border-slate-200 rounded-xl transition-all duration-200 outline-none placeholder:text-slate-400 text-slate-700 focus:ring-2 focus:ring-emerald/10 focus:border-emerald group-hover:border-slate-300',
+              'input-premium',
               error && 'border-rose-300 focus:ring-rose-100 focus:border-rose-500',
               className
             )}
@@ -84,7 +84,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           <select
             ref={ref}
             className={cn(
-              'w-full px-4 py-3 bg-white border border-slate-200 rounded-xl transition-all duration-200 outline-none text-slate-700 appearance-none focus:ring-2 focus:ring-emerald/10 focus:border-emerald group-hover:border-slate-300',
+              'input-premium appearance-none',
               props.value === '' && 'text-slate-400',
               error && 'border-rose-300 focus:ring-rose-100 focus:border-rose-500',
               className
@@ -161,7 +161,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           <textarea
             ref={ref}
             className={cn(
-              'w-full px-4 py-3 bg-white border border-slate-200 rounded-xl transition-all duration-200 outline-none placeholder:text-slate-400 text-slate-700 focus:ring-2 focus:ring-emerald/10 focus:border-emerald group-hover:border-slate-300 min-h-[100px] resize-y',
+              'input-premium min-h-[100px] resize-y',
               error && 'border-rose-300 focus:ring-rose-100 focus:border-rose-500',
               className
             )}

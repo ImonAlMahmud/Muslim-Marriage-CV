@@ -1,20 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { biodataSchema, BiodataFormValues } from './utils/validators';
 import { INITIAL_BIODATA } from './types';
 import { BiodataForm } from './components/form/BiodataForm';
 import { LivePreview } from './components/preview/LivePreview';
-import { ProgressBar } from './components/ProgressBar';
 import { Button, cn } from './components/ui/Button';
-import { FileDown, Printer, ShieldCheck, Heart, Moon, Sun, Menu, X, Info } from 'lucide-react';
+import { Printer, ShieldCheck, Heart, Moon, Sun, Menu, X, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import html2pdf from 'html2pdf.js';
 import confetti from 'canvas-confetti';
 
+const THEMES = {
+  classic: { primary: '#064e3b', secondary: '#B08968', icon: '#FDFCF8', name: 'Classic Emerald', uiPrimary: '#064e3b', uiBg: '#fcf9f2', isDark: false },
+  modern: { primary: '#022c22', secondary: '#2dd4bf', icon: '#ffffff', name: 'Emerald Night', uiPrimary: '#14b8a6', uiBg: '#011511', isDark: true },
+  gold: { primary: '#634832', secondary: '#d4af37', icon: '#d4af37', name: 'Gold Royale', uiPrimary: '#634832', uiBg: '#fdfcf8', isDark: false }
+} as const;
+
+type ThemeKey = keyof typeof THEMES;
+
 export default function App() {
+  const [theme, setTheme] = useState<ThemeKey>('classic');
+  const [pageSize, setPageSize] = useState<'a4' | 'legal'>('a4');
   const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const themeColors = useMemo(() => THEMES[theme], [theme]);
 
   const methods = useForm<BiodataFormValues>({
     resolver: zodResolver(biodataSchema),
@@ -22,232 +34,291 @@ export default function App() {
     mode: 'onChange',
   });
 
-  const { watch, handleSubmit } = methods;
+  const { watch } = methods;
   const fullName = watch('fullName');
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById('pdf-content');
-    if (!element) return;
-
-    setIsGenerating(true);
-    const opt = {
-      margin: 10,
-      filename: `Muslim_Marriage_CV_${fullName || 'Unnamed'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
     };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    try {
-      await html2pdf().set(opt).from(element).save();
-    } catch (error) {
-      console.error('PDF Generation Error:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
+  const handlePrint = async () => {
+    setIsProcessing(true);
+    setExportProgress(0);
+    
+    // Simulate progressive build for premium feel
+    const duration = 1500;
+    const startTime = Date.now();
+    
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const percent = Math.min((elapsed / duration) * 100, 100);
+      setExportProgress(percent);
+      
+      if (percent >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsProcessing(false);
+          window.print();
+        }, 300);
+      }
+    }, 50);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // Add a special effect when form is completed
-  React.useEffect(() => {
-    const requiredFields = [
-        'fullName', 'gender', 'dob', 'presentAddress', 'permanentAddress',
-        'contactNumber', 'religion', 'highestQualification', 'occupation',
-        'fatherName', 'motherName', 'familyBackground', 'personality',
-        'prefReligiousQualities', 'selfDescription'
-    ];
-    const data = watch();
-    const completedRequiredCount = requiredFields.filter(field => {
-        const value = data[field as keyof BiodataFormValues];
-        return value && (typeof value === 'string' ? value.length > 0 : true);
-    }).length;
-
-    if (completedRequiredCount === requiredFields.length) {
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#064e3b', '#B08968', '#f0fdf4']
-        });
+  // Trigger confetti on full completion (simulated for now)
+  useEffect(() => {
+    if (fullName && fullName.length > 20) { // Just a fun trigger
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: [themeColors.primary, themeColors.secondary, '#f0fdf4']
+      });
     }
-  }, [fullName]); // Simplified trigger for demo
+  }, [fullName, themeColors]);
 
   return (
     <FormProvider {...methods}>
-      <div className="min-h-screen bg-ivory bg-pattern selection:bg-emerald/10 selection:text-emerald">
-        {/* Navigation / Header */}
-        <header className="bg-white/70 backdrop-blur-lg border-b border-slate-100 sticky top-0 z-50 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald rounded-2xl flex items-center justify-center shadow-lg shadow-emerald/20">
-                <Heart className="text-white w-5 h-5 fill-current" />
-              </div>
-              <div>
-                <h2 className="text-xl font-serif font-bold text-emerald leading-none">Nikah CV</h2>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mt-1">Marriage Biodata Maker</p>
-              </div>
-            </div>
+      <div 
+        className="min-h-screen transition-colors duration-500 overflow-x-hidden selection:bg-emerald-900/10 selection:text-emerald-900"
+        style={{ backgroundColor: themeColors.uiBg }}
+      >
+        <style>{`@page { size: ${pageSize} portrait; margin: 0mm; }`}</style>
+        
+        <AnimatePresence>
+          {isProcessing && <ProcessingModal progress={exportProgress} themeColors={themeColors} />}
+        </AnimatePresence>
 
-            <div className="hidden md:flex items-center gap-4">
-               <div className="flex items-center gap-2 px-4 py-2 bg-emerald/5 rounded-full border border-emerald/10 text-emerald">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Privacy Guaranteed / শতভাগ গোপনীয়তা</span>
-               </div>
-               <Button variant="primary" onClick={handleDownloadPDF} isLoading={isGenerating}>
-                  <FileDown className="w-4 h-4" />
-                  Download PDF
-               </Button>
-               <Button variant="secondary" onClick={handlePrint}>
-                  <Printer className="w-4 h-4" />
-                  Print
-               </Button>
-            </div>
+        {/* Studio Header */}
+        <header 
+          className={cn(
+            "fixed top-0 left-0 right-0 z-[1000] px-4 sm:px-8 no-print transition-all duration-500 ease-in-out border-b",
+            isScrolled ? "py-2 sm:py-3 shadow-lg backdrop-blur-3xl" : "py-3 sm:py-5 backdrop-blur-md"
+          )}
+          style={{ 
+            backgroundColor: themeColors.isDark 
+              ? (isScrolled ? `${themeColors.uiBg}ee` : `${themeColors.uiBg}cc`) 
+              : (isScrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)'), 
+            borderColor: themeColors.isDark 
+              ? (isScrolled ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)') 
+              : `${themeColors.secondary}22` 
+          }}
+        >
+          <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-4">
+            <LogoBespoke themeColors={themeColors} />
+            
+            <div className="flex items-center gap-3 sm:gap-6">
+              {/* Theme Selector */}
+              <div className="hidden md:flex p-1 rounded-xl bg-slate-900/5 dark:bg-white/5 gap-1">
+                {(Object.keys(THEMES) as ThemeKey[]).map((key) => (
+                  <button 
+                    key={key}
+                    onClick={() => setTheme(key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-[9px] font-black transition-all flex items-center gap-2 uppercase tracking-widest",
+                      theme === key ? "shadow-sm scale-105" : "opacity-70 hover:opacity-100"
+                    )}
+                    style={{ 
+                      backgroundColor: theme === key ? (themeColors.isDark ? 'rgba(255,255,255,0.15)' : 'white') : 'transparent',
+                      color: theme === key ? (themeColors.isDark ? 'white' : themeColors.primary) : (themeColors.isDark ? 'rgba(255,255,255,0.6)' : themeColors.primary)
+                    }}
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: THEMES[key].primary }}></div>
+                    {key}
+                  </button>
+                ))}
+              </div>
 
-            {/* Mobile Actions */}
-            <div className="md:hidden flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setIsMobilePreviewOpen(!isMobilePreviewOpen)}>
-                    {isMobilePreviewOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {/* Paper Size */}
+              <div className="hidden sm:flex p-1 rounded-xl bg-slate-900/5 dark:bg-white/5">
+                {(['a4', 'legal'] as const).map((size) => (
+                  <button 
+                    key={size}
+                    onClick={() => setPageSize(size)} 
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-[10px] font-black transition-all uppercase tracking-widest",
+                      pageSize === size ? "text-white shadow-md" : "opacity-70 hover:opacity-100"
+                    )}
+                    style={{ 
+                      backgroundColor: pageSize === size ? themeColors.primary : 'transparent', 
+                      color: pageSize === size ? 'white' : (themeColors.isDark ? 'rgba(255,255,255,0.6)' : `${themeColors.primary}88`) 
+                    }}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+
+              <button 
+                onClick={handlePrint} 
+                disabled={isProcessing}
+                className="group relative px-6 py-3 sm:px-8 sm:py-4 text-white font-black rounded-xl sm:rounded-2xl transition-all overflow-hidden active:scale-95 shadow-xl flex-shrink-0"
+                style={{ backgroundColor: themeColors.primary }}
+              >
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+                  style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+                ></div>
+                <div className="absolute inset-0 bg-shimmer animate-shimmer group-hover:block hidden opacity-10"></div>
+                <div className="relative flex items-center justify-center gap-2 text-[10px] sm:text-xs">
+                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4 transition-transform group-hover:-translate-y-1" />}
+                  <span className="tracking-widest uppercase">
+                    {isProcessing ? "PROCESSING..." : "PRINT / SAVE CV"}
+                  </span>
+                  {!isProcessing && <Sparkles className="w-3 h-3 animate-pulse hidden sm:block text-gold" />}
+                </div>
+              </button>
+
+              {/* Mobile toggle */}
+              <div className="lg:hidden">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => setIsMobilePreviewOpen(!isMobilePreviewOpen)}
+                  className="rounded-xl"
+                >
+                  {isMobilePreviewOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </Button>
+              </div>
             </div>
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-6 py-12">
-          {/* Hero Section */}
-          <section className="mb-16 text-center max-w-2xl mx-auto">
-             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-             >
-                <Badge variant="success" className="mb-4 py-1.5 px-4 rounded-xl border border-emerald/20">
-                    Trusted by Thousands of Families
-                </Badge>
-                <h1 className="text-4xl md:text-5xl font-serif font-extrabold text-emerald mb-6 leading-[1.1]">
-                    Create a Respectful Marriage Biodata Instantly
-                </h1>
-                <p className="text-lg text-slate-500 leading-relaxed font-medium">
-                    Build a beautiful, professional, and family-shareable Muslim marriage CV in minutes — with complete privacy. <span className="text-emerald font-bold">No data is saved on our servers.</span>
-                </p>
-                
-                <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-4">
-                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                      <span className="w-2 h-2 rounded-full bg-emerald animate-pulse"></span>
-                      No Database
-                   </div>
-                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                      <span className="w-2 h-2 rounded-full bg-emerald animate-pulse"></span>
-                      Client-Side Generation
-                   </div>
-                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                      <span className="w-2 h-2 rounded-full bg-emerald animate-pulse"></span>
-                      Family Friendly
-                   </div>
-                </div>
-             </motion.div>
-          </section>
+        {/* Main Studio View */}
+        <main className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-32 pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-start">
+            
+            {/* Left Column: Hero + Form */}
+            <div className="space-y-12">
+              <section className="text-left relative">
+                <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-900/5 rounded-full blur-3xl -z-10"></div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <div 
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm border rounded-full mb-6"
+                    style={{ borderColor: `${themeColors.primary}22` }}
+                  >
+                    <ShieldCheck className="w-4 h-4" style={{ color: themeColors.primary }} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">100% In-Browser Privacy</span>
+                  </div>
+                  
+                  <h1 className="text-4xl sm:text-6xl font-serif font-black mb-6 leading-[1.1] tracking-tight">
+                    <span style={{ color: themeColors.isDark ? 'white' : themeColors.primary }}>Marriage CV Generator,</span><br/>
+                    <span style={{ color: themeColors.secondary }}>Beautifully Documented.</span>
+                  </h1>
+                </motion.div>
+              </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            {/* Form Section */}
-            <div className="lg:col-span-7">
-               <ProgressBar />
-               <BiodataForm />
+              <div className="relative">
+                 <BiodataForm singlePage theme={theme} />
+              </div>
             </div>
 
-            {/* Preview Section - Sticky Desktop */}
-            <div className="hidden lg:block lg:col-span-5">
-               <LivePreview />
+            {/* Right Column: Previews (Sticky) */}
+            <div className="hidden lg:block sticky top-32">
+               <div className="flex flex-col items-center">
+                  <div className="w-full flex justify-between items-center mb-6 px-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Live Studio Preview</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">{pageSize.toUpperCase()} Single Page Layout</span>
+                  </div>
+                  <LivePreview theme={theme} pageSize={pageSize} />
+               </div>
             </div>
           </div>
         </main>
 
-        <footer className="bg-white border-t border-slate-100 py-12 px-6 mt-20">
-            <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
-                    <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Moon className="w-5 h-5 text-emerald" />
-                            <span className="text-lg font-serif font-bold text-emerald">Nikah CV Maker</span>
-                        </div>
-                        <p className="text-sm text-slate-400 leading-relaxed font-medium">
-                            A privacy-first tool dedicated to helping the Ummah find suitable life partners through respectful and professional representation.
-                        </p>
-                    </div>
-
-                    <div className="bg-ivory-dark/50 p-6 rounded-2xl border border-slate-200/50">
-                        <h4 className="text-sm font-bold text-emerald uppercase tracking-widest mb-3 flex items-center gap-2">
-                           <ShieldCheck className="w-4 h-4" /> Privacy First
-                        </h4>
-                        <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                            Your information is not stored anywhere. All data stays in your browser memory and is cleared upon closing the tab. The PDF is generated locally on your device.
-                        </p>
-                        <p className="text-xs text-slate-500 mt-2 font-bengali font-bold">
-                            আপনার তথ্য কোথাও সংরক্ষণ করা হয় না। ব্রাউজার বন্ধ করলেই সব তথ্য মুছে যাবে।
-                        </p>
-                    </div>
-
-                    <div className="text-right">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Made with Heart for the Ummah</p>
-                        <p className="text-[10px] text-slate-300 mt-1">© 2024 Muslim Marriage CV Maker. All rights reserved.</p>
-                    </div>
-                </div>
-            </div>
-        </footer>
-
-        {/* Mobile Preview Modal */}
+        {/* Mobile View Sidebar */}
         <AnimatePresence>
-            {isMobilePreviewOpen && (
-                <motion.div
-                    initial={{ opacity: 0, x: '100%' }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: '100%' }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    className="fixed inset-0 z-[60] bg-ivory md:hidden overflow-y-auto"
-                >
-                    <div className="sticky top-0 bg-white border-b border-slate-100 p-4 flex items-center justify-between z-10">
-                         <Button variant="ghost" size="sm" onClick={() => setIsMobilePreviewOpen(false)}>
-                            <X className="w-5 h-5 mr-1" /> Close
-                         </Button>
-                         <div className="flex items-center gap-2">
-                            <Button size="sm" onClick={handleDownloadPDF} isLoading={isGenerating}>
-                                <FileDown className="w-4 h-4 mr-1" /> Save PDF
-                            </Button>
-                         </div>
-                    </div>
-                    <div className="p-4">
-                        <LivePreview />
-                    </div>
-                </motion.div>
-            )}
+          {isMobilePreviewOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              className="fixed inset-0 z-[2000] bg-ivory lg:hidden overflow-y-auto pt-24 px-4 pb-10"
+              style={{ backgroundColor: themeColors.uiBg }}
+            >
+               <div className="flex flex-col items-center gap-8">
+                  <div className="w-full flex justify-between items-center bg-white/50 p-4 rounded-2xl border border-slate-200/50 shadow-sm">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Preview Mode</span>
+                    <button onClick={() => setIsMobilePreviewOpen(false)} className="text-xs font-bold text-rose-500">Close</button>
+                  </div>
+                  <LivePreview theme={theme} pageSize={pageSize} scale={0.9} />
+               </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </FormProvider>
   );
 }
 
-const Badge = ({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'success' | 'warning' | 'error' | 'outline', className?: string }) => {
-    const styles = {
-      default: 'bg-slate-100 text-slate-600',
-      success: 'bg-emerald/10 text-emerald',
-      warning: 'bg-amber/10 text-amber-700',
-      error: 'bg-rose-50 text-rose-600',
-      outline: 'border border-slate-200 text-slate-500',
-    };
-  
-    return (
-      <span
-        className={cn(
-          'px-2.5 py-0.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5',
-          styles[variant],
-          className
-        )}
+const LogoBespoke = ({ themeColors }: { themeColors: any }) => (
+  <div className="flex items-center gap-4 group cursor-pointer text-left">
+    <div className="relative w-11 h-11 sm:w-13 sm:h-13">
+      <div 
+        className="absolute inset-0 rounded-2xl rotate-6 group-hover:rotate-12 transition-transform duration-500 shadow-xl shadow-emerald-950/20" 
+        style={{ backgroundColor: themeColors.primary }}
+      ></div>
+      <div 
+        className="absolute inset-0 bg-white border-2 rounded-2xl flex items-center justify-center transform group-hover:-translate-y-1 group-hover:-translate-x-1 transition-transform duration-500 overflow-hidden" 
+        style={{ borderColor: themeColors.primary }}
       >
-        {children}
-      </span>
-    );
-  };
+        <div className="absolute inset-0 opacity-[0.03] bg-pattern"></div>
+        <Heart className="w-6 h-6 fill-current relative z-10" style={{ color: themeColors.primary }} />
+      </div>
+    </div>
+    <div className="min-w-0">
+      <div className="flex items-baseline gap-1.5 leading-tight">
+        <h2 className="text-lg sm:text-2xl font-serif font-black tracking-tighter" style={{ color: themeColors.isDark ? 'white' : themeColors.primary }}>Nikah CV</h2>
+        <span className="text-[10px] sm:text-xs font-serif font-medium hidden xs:inline" style={{ color: themeColors.secondary }}>Studio</span>
+      </div>
+      <p className="text-[9px] font-bold uppercase tracking-[0.2em] leading-none mt-1 hidden sm:block" style={{ color: themeColors.isDark ? 'rgba(255,255,255,0.4)' : `${themeColors.secondary}aa` }}>By Ideomet Technologies</p>
+    </div>
+  </div>
+);
+
+const ProcessingModal = ({ progress, themeColors }: { progress: number, themeColors: any }) => (
+  <motion.div 
+    initial={{ opacity: 0 }} 
+    animate={{ opacity: 1 }} 
+    exit={{ opacity: 0 }} 
+    className="fixed inset-0 z-[6000] flex items-center justify-center px-4 backdrop-blur-xl bg-emerald-900/30 no-print"
+  >
+    <motion.div 
+      initial={{ scale: 0.9, y: 20 }} 
+      animate={{ scale: 1, y: 0 }} 
+      className="max-w-md w-full bg-white rounded-[3rem] p-10 sm:p-14 shadow-2xl border-[12px] border-ivory text-center relative overflow-hidden"
+    >
+      <div className="absolute inset-0 opacity-[0.05] bg-pattern rotate-12 scale-150"></div>
+      <div className="relative z-10">
+        <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-10 relative">
+          <div className="absolute inset-0 border-4 border-emerald-900 border-t-transparent rounded-full animate-spin"></div>
+          <Sparkles className="w-10 h-10 text-emerald-900" />
+        </div>
+        
+        <h2 className="text-3xl font-serif font-black text-emerald-900 mb-4 tracking-tight">Studio Preparation</h2>
+        <p className="text-xs font-black text-gold uppercase tracking-[0.3em] mb-10">Ready for High-Quality Export!</p>
+        
+        <div className="relative h-4 bg-emerald-50 rounded-full overflow-hidden shadow-inner mb-6 border border-emerald-100">
+          <motion.div 
+            animate={{ width: `${progress}%` }} 
+            className="absolute inset-0 bg-gradient-to-r from-emerald-900 via-emerald-800 to-gold animate-shimmer" 
+            style={{ backgroundSize: '200% 100%' }}
+            transition={{ duration: 0.2 }}
+          ></motion.div>
+        </div>
+        
+        <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2 pr-2">
+          <span>Progress</span>
+          <span className="text-emerald-900">{Math.round(progress)}%</span>
+        </div>
+      </div>
+    </motion.div>
+  </motion.div>
+);

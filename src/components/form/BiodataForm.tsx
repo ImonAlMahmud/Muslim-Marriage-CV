@@ -1,5 +1,6 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
+import { BiodataFormValues } from '../../utils/validators';
 import { BasicInfo } from './sections/BasicInfo';
 import { ReligiousInfo } from './sections/ReligiousInfo';
 import { EducationProfession } from './sections/EducationProfession';
@@ -8,93 +9,160 @@ import { PersonalOverview } from './sections/PersonalOverview';
 import { MarriagePreferences } from './sections/MarriagePreferences';
 import { AdditionalNotes } from './sections/AdditionalNotes';
 import { CustomFields } from './sections/CustomFields';
-import { Button } from '../ui/Button';
-import { Eraser, FileDown, Rocket } from 'lucide-react';
-import { SAMPLE_DATA } from '../../utils/sampleData';
+import { User, ShieldCheck, GraduationCap, Users, Sparkles, Heart, FileText, Plus } from 'lucide-react';
+import { PhotoUpload } from './sections/PhotoUpload'; // I'll need to check if this exists or create it
 
-export const BiodataForm = () => {
-    const { reset, formState: { isValid, errors } } = useFormContext();
+const THEMES = {
+  classic: { primary: '#064e3b', secondary: '#B08968', uiBg: '#fcf9f2', isDark: false },
+  modern: { primary: '#022c22', secondary: '#2dd4bf', uiBg: '#011511', isDark: true },
+  gold: { primary: '#634832', secondary: '#d4af37', uiBg: '#fdfcf8', isDark: false }
+} as const;
 
-    const handleFillSample = () => {
-        reset(SAMPLE_DATA);
-    };
+interface BiodataFormProps {
+  singlePage?: boolean;
+  theme?: keyof typeof THEMES;
+}
 
-    const handleReset = () => {
-        if (confirm('Are you sure you want to reset the entire form? This will erase all your data. / আপনি কি নিশ্চিত যে আপনি সকল তথ্য মুছে দিতে চান?')) {
-            reset();
-        }
-    };
+export const BiodataForm: React.FC<BiodataFormProps> = ({ theme = 'classic' }) => {
+  const { watch, setValue } = useFormContext<BiodataFormValues>();
+  const profilePhoto = watch('profilePhoto');
+  const isDark = (THEMES[theme] || THEMES.classic).isDark;
 
-    const incompleteCount = Object.keys(errors).length;
+  return (
+    <div className="space-y-12 pb-20">
+      {/* Photo Section */}
+      <div className={cn("card-premium p-6 sm:p-10", isDark ? "bg-[#042f2e]/40 border-white/5" : "")}>
+         <PhotoUpload 
+            value={profilePhoto} 
+            onChange={(val) => setValue('profilePhoto', val)} 
+            theme={theme}
+         />
+      </div>
 
-    return (
-        <div className="space-y-10 pb-20">
-            {/* Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-sm sticky top-4 z-40">
-                <div className="flex items-center gap-3">
-                    <Button variant="secondary" size="sm" onClick={handleReset}>
-                        <Eraser className="w-4 h-4" />
-                        Reset / মুছুন
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleFillSample}>
-                        <Rocket className="w-4 h-4" />
-                        Fill Sample / স্যাম্পল দেখুন
-                    </Button>
-                </div>
+      <FormCard 
+        title="Identity" 
+        bnTitle="সাধারণ তথ্য" 
+        icon={<User className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <BasicInfo />
+      </FormCard>
 
-                <div className="flex items-center gap-2">
-                    {incompleteCount > 0 && (
-                        <span className="text-xs font-semibold text-rose-500 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-100">
-                             আর মাত্র {incompleteCount}টি তথ্য বাকি
-                        </span>
-                    )}
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mr-2">
-                        Real-time Saving
-                    </p>
-                </div>
-            </div>
+      <FormCard 
+        title="Religious Identity" 
+        bnTitle="ধর্মীয় তথ্য" 
+        icon={<ShieldCheck className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <ReligiousInfo />
+      </FormCard>
 
-            <div className="space-y-12">
-                <section id="basic">
-                    <BasicInfo />
-                </section>
+      <FormCard 
+        title="Education & Profession" 
+        bnTitle="শিক্ষা ও পেশা" 
+        icon={<GraduationCap className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <EducationProfession />
+      </FormCard>
 
-                <section id="religious">
-                    <ReligiousInfo />
-                </section>
+      <FormCard 
+        title="Family Information" 
+        bnTitle="পারিবারিক তথ্য" 
+        icon={<Users className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <FamilyInfo />
+      </FormCard>
 
-                <section id="education">
-                    <EducationProfession />
-                </section>
+      <FormCard 
+        title="Personal Overview" 
+        bnTitle="ব্যক্তিগত তথ্য" 
+        icon={<Sparkles className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <PersonalOverview />
+      </FormCard>
 
-                <section id="family">
-                    <FamilyInfo />
-                </section>
+      <FormCard 
+        title="Marriage Preferences" 
+        bnTitle="বিবাহের পছন্দ" 
+        icon={<Heart className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <MarriagePreferences />
+      </FormCard>
 
-                <section id="personal">
-                    <PersonalOverview />
-                </section>
+      <FormCard 
+        title="Additional Notes" 
+        bnTitle="অন্যান্য তথ্য" 
+        icon={<FileText className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <AdditionalNotes />
+      </FormCard>
 
-                <section id="preferences">
-                    <MarriagePreferences />
-                </section>
-
-                <section id="additional">
-                    <AdditionalNotes />
-                </section>
-
-                <section id="custom">
-                    <CustomFields />
-                </section>
-            </div>
-
-            {/* Bottom Floating Info for Mobile */}
-            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] z-50">
-                <Button className="w-full shadow-2xl py-5" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
-                    <FileDown className="w-5 h-5 mr-2" />
-                    Preview & Download PDF
-                </Button>
-            </div>
-        </div>
-    );
+      <FormCard 
+        title="Custom Fields" 
+        bnTitle="অতিরিক্ত তথ্য" 
+        icon={<Plus className="w-6 h-6" />} 
+        theme={theme}
+      >
+        <CustomFields />
+      </FormCard>
+    </div>
+  );
 };
+
+interface FormCardProps {
+  title: string;
+  bnTitle: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  theme?: keyof typeof THEMES;
+}
+
+const FormCard: React.FC<FormCardProps> = ({ title, bnTitle, icon, children, theme = 'classic' }) => {
+  const themeColors = THEMES[theme] || THEMES.classic;
+  const isDark = themeColors.isDark;
+  
+  return (
+    <div className={cn(
+      "card-premium p-6 sm:p-10 transition-all duration-500",
+      isDark ? "bg-[#042f2e]/40 border-white/5" : ""
+    )}>
+      <div className="flex items-center gap-6 mb-10">
+        <div 
+          className={cn(
+            "w-14 h-14 sm:w-16 sm:h-16 rounded-[1.75rem] flex items-center justify-center shadow-xl transform hover:rotate-6 transition-transform relative overflow-hidden",
+            isDark ? "bg-teal-500 text-slate-900 shadow-teal-500/20" : "bg-emerald-900 text-gold shadow-emerald-950/20"
+          )}
+        >
+          <div className="absolute inset-0 opacity-10 bg-pattern"></div>
+          <div className="relative z-10">{icon}</div>
+        </div>
+        <div>
+          <span 
+            className={cn(
+              "text-[10px] font-black uppercase tracking-[0.3em] block mb-0.5 opacity-60 font-bengali",
+              isDark ? "text-teal-400" : "text-gold"
+            )}
+          >
+            {bnTitle}
+          </span>
+          <h3 className={cn(
+            "text-2xl sm:text-3xl font-serif font-black tracking-tight",
+            isDark ? "text-white" : "text-emerald-900"
+          )}>
+            {title}
+          </h3>
+        </div>
+      </div>
+      <div className="space-y-8">{children}</div>
+    </div>
+  );
+};
+
+function cn(...classes: any[]) {
+    return classes.filter(Boolean).join(' ');
+}
