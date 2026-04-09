@@ -6,7 +6,7 @@ import { INITIAL_BIODATA } from './types';
 import { BiodataForm } from './components/form/BiodataForm';
 import { LivePreview } from './components/preview/LivePreview';
 import { Button, cn } from './components/ui/Button';
-import { Printer, ShieldCheck, Heart, Moon, Sun, Menu, X, Sparkles, Loader2 } from 'lucide-react';
+import { Printer, ShieldCheck, Heart, Moon, Sun, Menu, X, Sparkles, Loader2, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
@@ -17,6 +17,31 @@ const THEMES = {
 } as const;
 
 type ThemeKey = keyof typeof THEMES;
+
+const SAMPLE_BIODATA: Partial<BiodataFormValues> = {
+  fullName: 'Ibrahim Khalil',
+  gender: 'Male' as any,
+  dob: '1995-05-15',
+  height: "5'10\"",
+  maritalStatus: 'Unmarried' as any,
+  nationality: 'Bangladeshi',
+  presentAddress: 'Dhanmondi, Dhaka',
+  contactNumber: '01700-000000',
+  email: 'ibrahim.khalil@email.com',
+  religion: 'Islam',
+  orientation: 'Sunni',
+  salahStatus: '5 times regularly',
+  quranAbility: 'Can read fluently',
+  highestQualification: "Bachelor's",
+  occupation: 'Software Engineer',
+  fatherName: 'Late Abdur Rahman',
+  motherName: 'Maryam Begum',
+  familyBackground: 'Respectable family focusing on deen and education.',
+  personality: 'Calm and family-oriented.',
+  prefReligiousQualities: 'Should be regular in Salah and modest.',
+  selfDescription: 'I try my best to live according to the Sunnah.',
+  profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&h=256&auto=format&fit=crop'
+};
 
 export default function App() {
   const [theme, setTheme] = useState<ThemeKey>('classic');
@@ -34,8 +59,14 @@ export default function App() {
     mode: 'onChange',
   });
 
-  const { watch } = methods;
-  const fullName = watch('fullName');
+  const { watch, reset, setValue } = methods;
+  const formData = watch();
+
+  const progress = useMemo(() => {
+    const required = ['fullName', 'gender', 'dob', 'presentAddress', 'contactNumber', 'religion', 'highestQualification', 'occupation'] as const;
+    const completed = required.filter(f => formData[f]);
+    return Math.round((completed.length / required.length) * 100);
+  }, [formData]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,11 +76,20 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleFillSample = () => {
+    reset(SAMPLE_BIODATA as any);
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: [themeColors.primary, themeColors.secondary]
+    });
+  };
+
   const handlePrint = async () => {
     setIsProcessing(true);
     setExportProgress(0);
     
-    // Simulate progressive build for premium feel
     const duration = 1500;
     const startTime = Date.now();
     
@@ -67,18 +107,6 @@ export default function App() {
       }
     }, 50);
   };
-
-  // Trigger confetti on full completion (simulated for now)
-  useEffect(() => {
-    if (fullName && fullName.length > 20) { // Just a fun trigger
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: [themeColors.primary, themeColors.secondary, '#f0fdf4']
-      });
-    }
-  }, [fullName, themeColors]);
 
   return (
     <FormProvider {...methods}>
@@ -212,6 +240,36 @@ export default function App() {
                     <span style={{ color: themeColors.isDark ? 'white' : themeColors.primary }}>Marriage CV Generator,</span><br/>
                     <span style={{ color: themeColors.secondary }}>Beautifully Documented.</span>
                   </h1>
+
+                  {/* High-Fidelity Progress Bar Section */}
+                  <div 
+                    className={cn(
+                      "flex items-center justify-between gap-6 py-5 px-8 rounded-3xl border transition-all duration-300 mb-12",
+                      themeColors.isDark ? "bg-slate-900/60 border-white/10 shadow-emerald-950/40" : "bg-white border-emerald-50/50 shadow-premium"
+                    )}
+                  >
+                    <div className="flex-1">
+                        <div className="flex justify-between items-end mb-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Progress / পূর্ণতা</span>
+                            <span className="text-xl font-serif font-black" style={{ color: themeColors.isDark ? 'white' : themeColors.primary }}>{progress}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: themeColors.isDark ? 'rgba(255,255,255,0.1)' : `${themeColors.primary}11` }}>
+                            <motion.div 
+                              animate={{ width: `${progress}%` }} 
+                              className="h-full" 
+                              style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+                            ></motion.div>
+                        </div>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={handleFillSample} 
+                      className="text-[9px] font-black uppercase tracking-widest hover:underline flex items-center gap-2 transition-colors" 
+                      style={{ color: themeColors.isDark ? '#2dd4bf' : themeColors.primary }}
+                    >
+                        <Zap className={cn("w-3 h-3", themeColors.isDark ? "text-[#2dd4bf]" : "")} /> Sample
+                    </button>
+                  </div>
                 </motion.div>
               </section>
 
