@@ -33,8 +33,8 @@ export const BiodataForm: React.FC<BiodataFormProps> = ({ theme = 'classic' }) =
       {/* Photo Section */}
       <div className={cn("card-premium p-6 sm:p-10", isDark ? "bg-[#042f2e]/40 border-white/5" : "")}>
          <PhotoUpload 
-            value={profilePhoto} 
-            onChange={(val) => setValue('profilePhoto', val)} 
+            value={profilePhoto || undefined} 
+            onChange={(val) => setValue('profilePhoto', val || undefined)} 
             theme={theme}
          />
       </div>
