@@ -59,7 +59,7 @@ export default function App() {
     mode: 'onChange',
   });
 
-  const { watch, reset, setValue } = methods;
+  const { watch, reset } = methods;
   const formData = watch();
 
   const progress = useMemo(() => {
@@ -90,7 +90,8 @@ export default function App() {
     setIsProcessing(true);
     setExportProgress(0);
     
-    const duration = 1500;
+    // Original Studio Timing: ~1.5 - 2s processing before native print
+    const duration = 1800;
     const startTime = Date.now();
     
     const interval = setInterval(() => {
@@ -103,7 +104,7 @@ export default function App() {
         setTimeout(() => {
           setIsProcessing(false);
           window.print();
-        }, 300);
+        }, 350);
       }
     }, 50);
   };
@@ -216,7 +217,7 @@ export default function App() {
         </header>
 
         {/* Main Studio View */}
-        <main className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-32 pb-20">
+        <main className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-32 pb-20 no-print">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-start">
             
             {/* Left Column: Hero + Form */}
@@ -241,7 +242,7 @@ export default function App() {
                     <span style={{ color: themeColors.secondary }}>Beautifully Documented.</span>
                   </h1>
 
-                  {/* High-Fidelity Progress Bar Section */}
+                  {/* Progress Bar Section */}
                   <div 
                     className={cn(
                       "flex items-center justify-between gap-6 py-5 px-8 rounded-3xl border transition-all duration-300 mb-12",
@@ -274,7 +275,7 @@ export default function App() {
               </section>
 
               <div className="relative">
-                 <BiodataForm singlePage theme={theme} />
+                 <BiodataForm theme={theme} />
               </div>
             </div>
 
@@ -285,7 +286,7 @@ export default function App() {
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Live Studio Preview</span>
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">{pageSize.toUpperCase()} Single Page Layout</span>
                   </div>
-                  <LivePreview theme={theme} pageSize={pageSize} />
+                  <LivePreview theme={theme} pageSize={pageSize} scale={0.65} />
                </div>
             </div>
           </div>
@@ -311,6 +312,11 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* 1:1 Scale Print Wrapper (Dedicated Native Engine Target) */}
+        <div className="hidden print:block print:m-0 print:p-0 print-wrapper">
+          <LivePreview theme={theme} pageSize={pageSize} scale={1} id="cv-print-output" isPrintVersion />
+        </div>
       </div>
     </FormProvider>
   );

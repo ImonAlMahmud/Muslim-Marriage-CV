@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { BiodataFormValues } from '../../utils/validators';
 import { User, ShieldCheck, Briefcase, Sparkles, Heart } from 'lucide-react';
@@ -13,12 +13,16 @@ interface LivePreviewProps {
   theme?: keyof typeof THEMES;
   pageSize?: 'a4' | 'legal';
   scale?: number;
+  id?: string;
+  isPrintVersion?: boolean;
 }
 
 export const LivePreview: React.FC<LivePreviewProps> = ({ 
   theme = 'classic', 
   pageSize = 'a4',
-  scale = 0.65 
+  scale = 0.65,
+  id = "pdf-content",
+  isPrintVersion = false
 }) => {
   const { watch } = useFormContext<BiodataFormValues>();
   const data = watch();
@@ -40,10 +44,19 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
   ].filter(Boolean).join('\n');
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrFields)}`;
 
+  // Container styling - handle print vs view
+  const containerClass = isPrintVersion 
+    ? "print:m-0 print:p-0" 
+    : "no-print origin-top transition-transform duration-500";
+  
+  const containerStyle = isPrintVersion 
+    ? {} 
+    : { transform: `scale(${scale})` };
+
   return (
-    <div className="no-print origin-top transition-transform duration-500" style={{ transform: `scale(${scale})` }}>
+    <div className={containerClass} style={containerStyle}>
       <div 
-        id="pdf-content"
+        id={id}
         className={`w-[210mm] ${heightClass} paper-shadow relative overflow-hidden bg-pattern font-sans ${borderSize} transition-all duration-500 ${isDark ? 'bg-[#022c22] text-white' : 'bg-[#fcfaf4] text-slate-800'}`} 
         style={{ borderColor: themeColors.primary }}
       >
@@ -110,8 +123,8 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
 
                 <CVSection title="Education & Professional" icon={<Briefcase className="w-4 h-4" />} themeColors={themeColors}>
                     <div className="grid grid-cols-2 gap-x-10">
-                        <CVDataRow label="Qualification" value={data.highestQualification} themeColors={themeColors} />
-                        <CVDataRow label="Current Role" value={data.occupation} themeColors={themeColors} />
+                         <CVDataRow label="Qualification" value={data.highestQualification} themeColors={themeColors} />
+                         <CVDataRow label="Current Role" value={data.occupation} themeColors={themeColors} />
                     </div>
                 </CVSection>
 
